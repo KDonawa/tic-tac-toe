@@ -102,15 +102,15 @@ const GameBoard = ({ turnCompleted }) => {
         return false;
     }
 
-    init();
-
     return { init, awaitPlayerInput, draw, getRemainingSquares, hasWinner };
 };
 
 const game = (() => {
-    let gameBoard;
+    let gameBoard = GameBoard({ turnCompleted });
     let currentPlayerIndex;
     let players;
+    const displayHeader = document.querySelector(".game-header");
+    document.querySelector(".restartBtn").addEventListener("click", restart);
 
     function getCurrentPlayer() {
         return players[currentPlayerIndex % 2];
@@ -125,26 +125,37 @@ const game = (() => {
 
     function isGameOver() {
         if (gameBoard.hasWinner()) {
-            console.log(`${getCurrentPlayer().getSymbol()} has won!`);
+            displayHeader.innerHTML = `<section class="winScreen">${getCurrentPlayer().getName()} Wins</section>`;
             return true;
         }
         if (gameBoard.getRemainingSquares().length === 0) {
-            console.log("It's a tie!");
+            displayHeader.innerHTML = `<section class="winScreen">It is a Tie</section>`;
             return true;
         }
 
         return false;
     }
 
-    function init(player1, player2) {
-        gameBoard = GameBoard({ turnCompleted });
-        players = [player1, player2];
+    function restart() {
+        displayHeader.innerHTML = `
+            <section class="scoreBoard">
+                <span class="scoreBoard-player1">${players[0].getName()}</span>
+                <span>vs</span>
+                <span class="scoreBoard-player2">${players[1].getName()}</span>
+            </section>
+        `;
+        gameBoard.init();
         currentPlayerIndex = Math.floor(Math.random() * 2);
-
         getCurrentPlayer().takeTurn(gameBoard);
+    }
+
+    function init(player1, player2) {
+        players = [player1, player2];
+
+        restart();
     }
 
     return { init };
 })();
 
-game.init(HumanPlayer("Player 1", "X"), AIPlayer("Player 2", "O"));
+game.init(HumanPlayer("Player One", "X"), AIPlayer("Bot Lvl One", "O"));
