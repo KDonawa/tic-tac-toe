@@ -7,8 +7,8 @@ const Player = (name, symbol) => {
 
 const AIPlayer = (name, symbol) => {
     function takeTurn(gameBoard) {
-        const remainingSquares = gameBoard.getRemainingSquares();
-        const location = remainingSquares[Math.floor(Math.random() * remainingSquares.length)];
+        const vacantSquares = gameBoard.getVacantSquares();
+        const location = vacantSquares[Math.floor(Math.random() * vacantSquares.length)];
         gameBoard.draw(location, symbol);
     }
     return Object.assign({}, Player(name, symbol), { takeTurn });
@@ -31,31 +31,35 @@ const GameBoard = ({ turnCompleted }) => {
     });
 
     function init() {
-        board = [
-            ["", "", ""],
-            ["", "", ""],
-            ["", "", ""],
-        ];
+        board = ["", "", "", "", "", "", "", "", ""];
         currentPlayer = null;
         display();
     }
 
+    function display() {
+        squares.forEach((square, i) => {
+            square.textContent = board[i];
+        });
+    }
+
+    function getVacantSquares() {
+        return squares.filter((square) => square.textContent === "");
+    }
+
+    function getBoard() {
+        return board;
+    }
+
     function awaitPlayerInput(player) {
         currentPlayer = player;
-        getRemainingSquares().forEach((square) => {
+        getVacantSquares().forEach((square) => {
             square.addEventListener("click", onClick);
         });
     }
     function rejectPlayerInput() {
         currentPlayer = null;
-        getRemainingSquares().forEach((square) => {
+        getVacantSquares().forEach((square) => {
             square.removeEventListener("click", onClick);
-        });
-    }
-
-    function display() {
-        squares.forEach((square, index) => {
-            square.textContent = board[parseInt(index / 3)][index % 3];
         });
     }
 
@@ -65,16 +69,10 @@ const GameBoard = ({ turnCompleted }) => {
         draw(this, currentPlayer.getSymbol());
     }
 
-    function getRemainingSquares() {
-        return squares.filter((square) => square.textContent === "");
-    }
-
-    function draw(location, value) {
+    function draw(location, symbol) {
         rejectPlayerInput();
 
-        const index = parseInt(location.dataset.id);
-        board[parseInt(index / 3)][index % 3] = value;
-
+        board[parseInt(location.dataset.id)] = symbol;
         display();
         turnCompleted();
     }
@@ -82,27 +80,29 @@ const GameBoard = ({ turnCompleted }) => {
     function hasWinner() {
         for (let i = 0; i < 3; i++) {
             // check for win along rows
-            if (board[i][0] == board[i][1] && board[i][1] == board[i][2] && board[i][2] != "") {
+            if (board[3 * i] !== "" && board[3 * i] === board[3 * i + 1] && board[3 * i + 1] === board[3 * i + 2]) {
                 return true;
             }
             // check for win along columns
-            if (board[0][i] == board[1][i] && board[1][i] == board[2][i] && board[2][i] != "") {
+            if (board[i] !== "" && board[i] === board[i + 3] && board[i + 3] === board[i + 6]) {
                 return true;
             }
         }
 
         // check for win along diagonals
-        if (board[0][0] == board[1][1] && board[1][1] == board[2][2] && board[2][2] != "") {
+        if (board[0] !== "" && board[0] === board[4] && board[4] === board[8]) {
             return true;
         }
-        if (board[0][2] == board[1][1] && board[1][1] == board[2][0] && board[2][0] != "") {
+        if (board[2] !== "" && board[2] === board[4] && board[4] === board[6]) {
             return true;
         }
 
         return false;
     }
 
-    return { init, awaitPlayerInput, draw, getRemainingSquares, hasWinner };
+    init();
+
+    return { init, getBoard, getVacantSquares, awaitPlayerInput, draw, hasWinner };
 };
 
 const game = (() => {
@@ -128,7 +128,7 @@ const game = (() => {
             displayHeader.innerHTML = `<section class="winScreen">${getCurrentPlayer().getName()} Wins</section>`;
             return true;
         }
-        if (gameBoard.getRemainingSquares().length === 0) {
+        if (gameBoard.getVacantSquares().length === 0) {
             displayHeader.innerHTML = `<section class="winScreen">It is a Tie</section>`;
             return true;
         }
